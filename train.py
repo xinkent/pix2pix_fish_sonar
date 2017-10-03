@@ -22,7 +22,7 @@ def train():
     parser.add_argument('--batchsize', '-b', type=int, default = 1)
     parser.add_argument('--epoch', '-e', type=int, default = 500)
     parser.add_argument('--out', '-o',default = 'result')
-    parser.add_argument('--lmd', '-l',type=int, default = 100)
+    parser.add_argument('--lmd', '-l',type=float, default = 100)
     args = parser.parse_args()
 
 
@@ -40,7 +40,7 @@ def train():
     lmd = args.lmd
 
     o = open(resultDir + "/log","w")
-    o.write("batch:" + batch_size + "  lamda:" + lmd + "\n")
+    o.write("batch:" + batch_size + "  lamda:" + str(lmd) + "\n")
     o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy")
     o.close()
 
