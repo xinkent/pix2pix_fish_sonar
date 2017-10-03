@@ -40,7 +40,7 @@ def train():
     lmd = args.lmd
 
     o = open(resultDir + "/log","w")
-    o.write("batch:" + batch_size + "  lamda:" + str(lmd) + "\n")
+    o.write("batch:" + str(batch_size) + "  lamda:" + str(lmd) + "\n")
     o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy")
     o.close()
 
