@@ -34,6 +34,9 @@ def train():
     if not os.path.exists(resultDir):
         os.mkdir(resultDir)
 
+    modelDir = resultDir + "/model/"
+    if not os.path.exists(modelDir):
+        os.mkdir(modelDir)
 
     batch_size = args.batchsize
     nb_epoch = args.epoch
