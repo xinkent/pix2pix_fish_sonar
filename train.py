@@ -55,6 +55,9 @@ def train():
     # test_label = test_label[:,:,:,np.newaxis]
 
 
+    def dis_entropy(y_true, y_pred):
+        return -K.log(K.abs((y_pred - y_true)))
+
     # Create optimizers
     opt_gan = Adam(lr=1E-3)
     # opt_discriminator = SGD(lr=1E-3, momentum=0.9, nesterov=True)
@@ -74,7 +77,7 @@ def train():
     gan.compile(loss = gan_loss, loss_weights = gan_loss_weights,optimizer = opt_gan)
 
     dis.trainable = True
-    dis.compile(loss='binary_crossentropy', optimizer=opt_discriminator)
+    dis.compile(loss=dis_entropy, optimizer=opt_discriminator)
 
     train_n = train_img.shape[0]
     test_n = test_img.shape[0]
