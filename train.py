@@ -42,9 +42,9 @@ def train():
     nb_epoch = args.epoch
     lmd = args.lmd
 
-    o = open(resultDir + "/log","w")
+    o = open(resultDir + "/log.txt","w")
     o.write("batch:" + str(batch_size) + "  lamda:" + str(lmd) + "\n")
-    o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy")
+    o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy" + "\n")
     o.close()
 
     # data_ind = np.random.permutation(400)
