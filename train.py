@@ -25,8 +25,6 @@ def train():
     parser.add_argument('--lmd', '-l',type=int, default = 100)
     args = parser.parse_args()
 
-    def l1_loss(y_true,y_pred):
-        return K.mean(K.abs(y_pred - y_true),axis=[1,2,3])
 
     if not os.path.exists("./result"):
         os.mkdir("./result")
@@ -36,16 +34,18 @@ def train():
     if not os.path.exists(resultDir):
         os.mkdir(resultDir)
 
-    o = open(resultDir + "/log","w")
-    o.write("start \n")
-    o.close()
-
 
     batch_size = args.batchsize
     nb_epoch = args.epoch
     lmd = args.lmd
 
-    data_ind = np.random.permutation(400)
+    o = open(resultDir + "/log","w")
+    o.write("batch:" + batch_size + "  lamda:" + lmd + "\n")
+    o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy")
+    o.close()
+
+    # data_ind = np.random.permutation(400)
+    data_ind = np.arange(400)
     train_img, train_label = load_dataset(data_range = data_ind[0:350])
     # train_label = train_label[:,:,:,np.newaxis]
     test_img, test_label = load_dataset(data_range = data_ind[0:350])
@@ -76,6 +76,107 @@ def train():
     train_n = train_img.shape[0]
     test_n = test_img.shape[0]
     print(train_n,test_n)
+
+    for epoch in range(nb_epoch):
+
+        o = open(resultDir + "/log.txt","a")
+        print("Epoch is ", epoch)
+        print("Number of batches", int(train_n/batch_size))
+        ind = np.random.permutation(train_n)
+        test_ind = np.random.permutation(test_n)
+        dis_loss_list = []
+        gan_loss_list = []
+        test_dis_loss_list = []
+        test_gan_loss_list = []
+
+        # training
+        for index in range(int(train_n/batch_size)):
+            img_batch = train_img[ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
+            label_batch =train_label[ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
+            generated_img = gen.predict(label_batch)
+
+            y_real = np.array([1] * batch_size)
+            y_fake = np.array([0] * batch_size)
+            d_real_loss = np.array(dis.train_on_batch([label_batch,img_batch],y_real))
+            d_fake_loss =np.array(dis.train_on_batch([label_batch,generated_img],y_fake))
+            d_loss = d_real_loss + d_fake_loss
+            dis_loss_list.append(d_loss)
+            gan_y = np.array([1] * batch_size)
+            g_loss = np.array(gan.train_on_batch([label_batch], [img_batch, gan_y]))
+            gan_loss_list.append(g_loss)
+        dis_loss = np.mean(np.array(dis_loss_list))
+        gan_loss = np.mean(np.array(gan_loss_list), axis=1)
+
+        # validation
+        for index in range(int(test_n/batch_size)):
+            test_ind = np.random.permutation(test_n)
+            test_img_batch = test_img[test_ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
+            test_label_batch = test_label[test_ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
+            test_generated_img = gen.predict(test_label_batch)
+            test_labels = np.concatenate([test_label_batch,test_label_batch])
+            test_imgs = np.concatenate([test_img_batch,test_generated_img])
+            dis_y = np.array([1] * batch_size + [0] * batch_size)
+            d_loss = np.array(dis.test_on_batch([test_labels,test_imgs],dis_y ))
+            test_dis_loss_list.append(d_loss)
+            gan_y = np.array([1] * batch_size)
+            g_loss = np.array(gan.test_on_batch([test_label_batch], [test_img_batch, gan_y]))
+            test_gan_loss_list.append(g_loss)
+        test_dis_loss = np.mean(np.array(test_dis_loss_list))
+        test_gan_loss = np.mean(np.array(test_gan_loss_list), axis=1)
+
+        o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
+
+
+        # visualize
+        if epoch % 50 == 0 :
+            img_batch = train_img[ind[0:9],:,:,:]
+            label_batch =train_label[ind[0:9],:,:,:]
+            image = combine_images(label_batch)
+            generated_img = gen.predict(label_batch)
+
+            image = combine_images(label_batch)
+            image = image.reshape(image.shape[0:2])
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/label_" + str(epoch)+"epoch.png")
+
+            image = combine_images(img_batch)
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/gt_" + str(epoch)+"epoch.png")
+
+
+
+            image = combine_images(generated_img)
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/generated_" + str(epoch)+"epoch.png")
+
+
+            img_batch = test_img[test_ind[0:9],:,:,:]
+            label_batch =test_label[test_ind[0:9],:,:,:]
+            image = combine_images(label_batch)
+            generated_img = gen.predict(label_batch)
+
+            image = combine_images(label_batch)
+            image = image.reshape(image.shape[0:2])
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/vlabel_" + str(epoch)+"epoch.png")
+
+            image = combine_images(img_batch)
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/vgt_" + str(epoch)+"epoch.png")
+
+            image = combine_images(generated_img)
+            image = image*128.0+128.0
+            Image.fromarray(image.astype(np.uint8)).save(resultDir + "/vgenerated_" + str(epoch)+"epoch.png")
+
+            gan.save_weights(modelDir + 'gan_weights' + "_lambda" + str(lmd) + "_epoch"+ str(epoch) + '.h5')
+
+        o.close()
+    o.close()
+    # gan.save("gan_" + "patch" + str(patch_size) + ".h5")
+
+
+
+
     for epoch in range(nb_epoch):
 
         o = open(resultDir + "/log","a")
@@ -103,7 +204,8 @@ def train():
                 test_img_batch = test_img[test_ind[0:batch_size],:,:,:]
                 test_label_batch = test_label[test_ind[0:batch_size],:,:,:]
                 test_generated_img = gen.predict(test_label_batch)
-                validation_gen_loss = gen.test_on_batch(test_label_batch,test_img_batch)
+                # validation_gen_loss = gen.test_on_batch(test_label_batch,test_img_batch)
+                validation_gan_loss = gen.test_on_batch([test_label_batch,test_img_batch], [test_img_batch, gan_y])
 
                 image = combine_images(test_label_batch)
                 image = image.reshape(image.shape[0:2])
@@ -133,6 +235,8 @@ def train():
                 image = image*128.0+128.0
                 Image.fromarray(image.astype(np.uint8)).save(resultDir + "/generated_" + str(epoch)+"epoch.png")
 
+                o.write(str(epoch) + "," + str(d_loss) + "," + str(g_loss[0]) + "," + str(g_loss[1]) /
+                    + "," + str()
                 o.write("epoch"+str(epoch) + "\n")
                 o.write("disriminator_loss : " + str(d_loss) +"\n")
                 o.write("gan_loss : " + str(g_loss) +"\n")
