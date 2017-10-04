@@ -3,6 +3,7 @@ import keras.backend as K
 import numpy as np
 from keras.utils import generic_utils
 from keras.optimizers import Adam, SGD
+from keras.utils.np_utils import to_categorical
 from models import discriminator, generator, GAN
 from fish_dataset import load_dataset
 from PIL import Image
@@ -64,7 +65,7 @@ def train():
     opt_discriminator = Adam(lr=1E-3)
     opt_generator = Adam(lr=1E-3)
 
-    gan_loss = ['mae', 'binary_crossentropy']
+    gan_loss = ['mae', 'categorical_crossentropy']
     gan_loss_weights = [lmd,1]
 
     gen = generator()
@@ -77,7 +78,7 @@ def train():
     gan.compile(loss = gan_loss, loss_weights = gan_loss_weights,optimizer = opt_gan)
 
     dis.trainable = True
-    dis.compile(loss=dis_entropy, optimizer=opt_discriminator)
+    dis.compile(loss="categorical_crossentropy", optimizer=opt_discriminator)
 
     train_n = train_img.shape[0]
     test_n = test_img.shape[0]
@@ -101,13 +102,13 @@ def train():
             label_batch =train_label[ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
             generated_img = gen.predict(label_batch)
 
-            y_real = np.array([1] * batch_size)
-            y_fake = np.array([0] * batch_size)
+            y_real = to_categorical(np.array([1] * batch_size))
+            y_fake = to_categorical(np.array([0] * batch_size))
             d_real_loss = np.array(dis.train_on_batch(img_batch,y_real))
             d_fake_loss =np.array(dis.train_on_batch(generated_img,y_fake))
             d_loss = d_real_loss + d_fake_loss
             dis_loss_list.append(d_loss)
-            gan_y = np.array([1] * batch_size)
+            gan_y = to_categorical(np.array([1] * batch_size))
             g_loss = np.array(gan.train_on_batch([label_batch], [img_batch, gan_y]))
             gan_loss_list.append(g_loss)
         dis_loss = np.mean(np.array(dis_loss_list))

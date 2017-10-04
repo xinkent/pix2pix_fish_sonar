@@ -9,6 +9,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import UpSampling2D,Conv2D, MaxPooling2D,Conv2DTranspose
 from keras.layers.advanced_activations import LeakyReLU
 
+
 # convolution batchnormalization relu
 def CBR(ch,shape,bn=True,sample='down',activation=LeakyReLU, dropout=False):
     model = Sequential()
@@ -40,8 +41,8 @@ def discriminator():
     x = Flatten()(x)
     x = Dense(256)(x)
     x = LeakyReLU(0.2)(x)
-    x = Dense(1)(x)
-    output = Activation('sigmoid')(x)
+    x = Dense(2)(x)
+    output = Activation('softmax')(x)
     model = Model(inputs = img , outputs = output)
 
     return model
