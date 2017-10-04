@@ -61,7 +61,7 @@ def train():
     # Create optimizers
     opt_gan = Adam(lr=1E-3)
     # opt_discriminator = SGD(lr=1E-3, momentum=0.9, nesterov=True)
-    opt_discriminator = Adam(lr=1E-3)
+    opt_discriminator = Adam(lr=1E-5)
     opt_generator = Adam(lr=1E-3)
 
     gan_loss = ['mae', 'binary_crossentropy']
