@@ -38,12 +38,11 @@ def discriminator():
     x = CBR(64,(128,64,32))(x)
     x = CBR(128,(64,32,64))(x)
     x = CBR(256,(32,16,128))(x)
-    x = Flatten()(x)
-    x = Dense(256)(x)
-    x = LeakyReLU(0.2)(x)
-    x = Dense(2)(x)
-    output = Activation('softmax')(x)
-    model = Model(inputs = img , outputs = output)
+    x = CBR(512,(32,32,256))(x)
+    x = Conv2D(filters=1,kernel_size=3,strides=1,padding='same')(x)
+    x = Activation('sigmoid')(x)
+    output = Lambda(lambda x: K.mean(x, axis=[1,2]),output_shape=(1,))(x)
+    model = Model(inputs =[label_input,gen_output], outputs = [output])
 
     return model
 
