@@ -45,7 +45,7 @@ def train():
 
     o = open(resultDir + "/log.txt","w")
     o.write("batch:" + str(batch_size) + "  lamda:" + str(lmd) + "\n")
-    o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy" + "\n")
+    o.write("epoch,dis_loss,gan_mae,gan_entropy,test_dis_loss,validation_mae,validation_entropy" + "\n")
     o.close()
 
     data_ind = np.random.permutation(400)
@@ -65,7 +65,7 @@ def train():
     opt_discriminator = Adam(lr=1E-5)
     opt_generator = Adam(lr=1E-3)
 
-    gan_loss = ['mae', 'categorical_crossentropy']
+    gan_loss = ['mae', dis_entropy]
     gan_loss_weights = [lmd,1]
 
     gen = generator()
@@ -78,7 +78,7 @@ def train():
     gan.compile(loss = gan_loss, loss_weights = gan_loss_weights,optimizer = opt_gan)
 
     dis.trainable = True
-    dis.compile(loss="categorical_crossentropy", optimizer=opt_discriminator)
+    dis.compile(loss=dis_entropy, optimizer=opt_discriminator)
 
     train_n = train_img.shape[0]
     test_n = test_img.shape[0]
@@ -102,36 +102,28 @@ def train():
             label_batch =train_label[ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
             generated_img = gen.predict(label_batch)
 
-            y_real = to_categorical(np.array([1] * batch_size),2)
-            y_fake = to_categorical(np.array([0] * batch_size),2)
+            y_real = np.array([1] * batch_size)
+            y_fake = np.array([0] * batch_size)
             d_real_loss = np.array(dis.train_on_batch(img_batch,y_real))
             d_fake_loss =np.array(dis.train_on_batch(generated_img,y_fake))
             d_loss = d_real_loss + d_fake_loss
             dis_loss_list.append(d_loss)
-            gan_y = to_categorical(np.array([1] * batch_size),2)
+            gan_y = np.array([1] * batch_size)
             g_loss = np.array(gan.train_on_batch([label_batch], [img_batch, gan_y]))
             gan_loss_list.append(g_loss)
         dis_loss = np.mean(np.array(dis_loss_list))
         gan_loss = np.mean(np.array(gan_loss_list), axis=0)
 
         # validation
-        for index in range(int(test_n/batch_size)):
-            test_ind = np.random.permutation(test_n)
-            test_img_batch = test_img[test_ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
-            test_label_batch = test_label[test_ind[(index*batch_size) : ((index+1)*batch_size)],:,:,:]
-            test_generated_img = gen.predict(test_label_batch)
-            test_labels = np.concatenate([test_label_batch,test_label_batch])
-            test_imgs = np.concatenate([test_img_batch,test_generated_img])
-            dis_y = to_categorical(np.array([1] * batch_size + [0] * batch_size),2)
-            d_loss = np.array(dis.test_on_batch(test_imgs,dis_y ))
-            test_dis_loss_list.append(d_loss)
-            gan_y = to_categorical(np.array([1] * batch_size),2)
-            g_loss = np.array(gan.test_on_batch([test_label_batch], [test_img_batch, gan_y]))
-            test_gan_loss_list.append(g_loss)
-        test_dis_loss = np.mean(np.array(test_dis_loss_list))
-        test_gan_loss = np.mean(np.array(test_gan_loss_list), axis=0)
+        test_generated_img = gen.predict(test_label)
+        test_imgs = np.concatenate([test_img,test_generated_img])
+        test_labels = np.concatenate([test_label,test_label])
+        dis_y = np.array([1] * test_n + [0] * test_n)
+        test_dis_loss = np.array(dis.test_on_batch([test_labels,test_imgs],dis_y ))
+        gan_y = np.array([1] * test_n)
+        test_gan_loss = np.array(gan.test_on_batch([test_label], [test_img, gan_y]))
 
-        o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
+        o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_dis_loss) + ",", str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
 
 
         # visualize
