@@ -48,8 +48,8 @@ def train():
     o.write("epoch,dis_loss,gan_mae,gan_entropy,validation_mae,validation_entropy" + "\n")
     o.close()
 
-    # data_ind = np.random.permutation(400)
-    data_ind = np.arange(400)
+    data_ind = np.random.permutation(400)
+    # data_ind = np.arange(400)
     train_img, train_label = load_dataset(data_range = data_ind[0:350])
     # train_label = train_label[:,:,:,np.newaxis]
     test_img, test_label = load_dataset(data_range = data_ind[350:])
@@ -112,7 +112,7 @@ def train():
             g_loss = np.array(gan.train_on_batch([label_batch], [img_batch, gan_y]))
             gan_loss_list.append(g_loss)
         dis_loss = np.mean(np.array(dis_loss_list))
-        gan_loss = np.mean(np.array(gan_loss_list), axis=1)
+        gan_loss = np.mean(np.array(gan_loss_list), axis=0)
 
         # validation
         for index in range(int(test_n/batch_size)):
@@ -129,7 +129,7 @@ def train():
             g_loss = np.array(gan.test_on_batch([test_label_batch], [test_img_batch, gan_y]))
             test_gan_loss_list.append(g_loss)
         test_dis_loss = np.mean(np.array(test_dis_loss_list))
-        test_gan_loss = np.mean(np.array(test_gan_loss_list), axis=1)
+        test_gan_loss = np.mean(np.array(test_gan_loss_list), axis=0)
 
         o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
 
