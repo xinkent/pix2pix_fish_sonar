@@ -42,7 +42,7 @@ def discriminator():
     x = Conv2D(filters=1,kernel_size=3,strides=1,padding='same')(x)
     x = Activation('sigmoid')(x)
     output = Lambda(lambda x: K.mean(x, axis=[1,2]),output_shape=(1,))(x)
-    model = Model(inputs =[label_input,gen_output], outputs = [output])
+    model = Model(inputs = img, outputs = [output])
 
     return model
 

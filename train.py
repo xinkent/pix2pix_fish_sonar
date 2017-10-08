@@ -119,11 +119,11 @@ def train():
         test_imgs = np.concatenate([test_img,test_generated_img])
         test_labels = np.concatenate([test_label,test_label])
         dis_y = np.array([1] * test_n + [0] * test_n)
-        test_dis_loss = np.array(dis.test_on_batch([test_labels,test_imgs],dis_y ))
+        test_dis_loss = np.array(dis.test_on_batch(test_imgs,dis_y ))
         gan_y = np.array([1] * test_n)
         test_gan_loss = np.array(gan.test_on_batch([test_label], [test_img, gan_y]))
 
-        o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_dis_loss) + ",", str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
+        o.write(str(epoch) + "," + str(dis_loss) + "," + str(gan_loss[1]) + "," + str(gan_loss[2]) + "," + str(test_dis_loss) + "," +  str(test_gan_loss[1]) +"," + str(test_gan_loss[2]) + "\n")
 
 
         # visualize
